@@ -62,7 +62,7 @@ def test_create_kit_space_in_name_get_success_response():
 #test_create_kit_space_in_name_get_success_response()
 
     # Prueba 7:
-def test_create_kit_numbers_in_name_get_success_response():
+def test_create_kit_string_numbers_in_name_get_success_response():
     positive_assert("123")
 #test_create_kit_numbers_in_name_get_success_response()
 
@@ -72,7 +72,7 @@ def test_create_kit_empty_name_get_error_response():
 #test_create_kit_empty_name_get_error_response()
 
     #Prueba 9:
-def test_create_kit_empty_name_get_error_response():
+def test_create_kit_numbers_in_name_get_success_response():
     negative_assert_symbol(123)
 #test_create_kit_empty_name_get_error_response()
 
