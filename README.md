@@ -1,54 +1,115 @@
-# Proyecto Urban Grocers - API Testing
+# Urban Grocers — API Automated Test Suite
 
-## Descripción
-Este proyecto contiene pruebas automatizadas para la API de Urban Grocers, enfocándose en la validación de la creación de kits de usuario. Las pruebas verifican diferentes escenarios de validación del campo "name" en los kits, incluyendo casos positivos y negativos.
+Python + requests test suite for backend validation of the Urban Grocers 
+kit creation API. 9 tests cover boundary values, special input types, 
+and error handling for the `name` field — validating that the API enforces 
+business rules at every input boundary.
 
-## Requisitos Previos
-- Python 3.14+ instalado
-- Biblioteca `requests` para llamadas HTTP
-- Biblioteca `pytest` para ejecución de pruebas
-- Conexión a internet
-- Servidor de Urban Grocers activo
+---
 
-## Instalación y Configuración (Git Bash)
-### Paso 1: Clonar el repositorio
-git clone [URL_del_repositorio]
-cd qa-project-Urban-Grocers-app-es
-### Paso 2: Instalar dependencias
-pip install requests pytest
-### Paso 3: Configurar URL del servidor
-1. Abre el archivo configuration.py
-2. Actualiza la variable URL_SERVICE con la URL actual del servidor
-3. Importante: Los servidores son temporales, verifica que la URL esté activa
-### Paso 4: Ejecutar las pruebas
-#### Ejecutar todas las pruebas
-pytest test.py -v
-#### Ejecutar una prueba específica
-pytest test.py::test_create_kit_1_letter_in_name_get_success_response -v
+## What's Being Tested
 
-## Tecnologías Utilizadas
-- Python: 3.14+
-- Requests: Biblioteca para llamadas HTTP
-- Pytest: Framework de testing
-- API REST: Comunicación con servicios backend
-- Git: Control de versiones
+**Endpoint:** `POST /api/v1/kits`
+**Field under test:** `name` (kit name, string)
+**Valid range:** 1–511 characters
 
-## Estructura del Proyecto
+| Test | Input | Expected Status |
+|---|---|---|
+| Minimum valid length | 1 character | 201 Created |
+| Maximum valid length | 511 characters | 201 Created |
+| Over maximum | 512 characters | 400 Bad Request |
+| Special characters | `!@#$%` | 201 Created |
+| Spaces | `" "` | 201 Created |
+| Numbers as string | `"123"` | 201 Created |
+| Empty string | `""` | 400 Bad Request |
+| Missing `name` field | — | 400 Bad Request |
+| Wrong type (integer) | `123` | 400 Bad Request |
+
+---
+
+## Architecture
 qa-project-Urban-Grocers-app-es/
-├── test.py           # Casos de prueba principales
-├── utilities.py      # Funciones auxiliares para llamadas HTTP
-├── data.py           # Datos de prueba y headers
-├── configuration.py  # Configuración de URLs y endpoints
-├── README.md         # Documentación del proyecto
-└── .gitignore        # Archivos ignorados por Git
+├── test.py            # Test cases
+├── utilities.py       # HTTP call handlers (GET/POST)
+├── data.py            # Test data and request headers
+├── configuration.py   # Server URL and endpoint paths
+├── README.md
+└── .gitignore
 
-### Modularidad Implementada
-- test.py: Contiene los casos de prueba y funciones de validación
-- utilities.py: Maneja las llamadas HTTP (GET/POST)
-- data.py: Almacena datos de
+**Shared assertion helpers** reduce duplication across tests:
 
-## Funcionalidades Probadas
-- ✅ Creación de kits con nombres válidos (1-511 caracteres)
-- ✅ Validación de caracteres especiales y espacios
-- ✅ Manejo de números como strings
-- ❌ Validación de errores con nombres inválidos (vacío, muy largo, tipos incorrectos)
+```python
+def positive_assert(name):
+    """Validates a 201 response and confirms name persistence."""
+    auth_token = get_new_user_token()
+    response = utilities.post_new_client_kit(set_card_name(name), auth_token)
+    assert response.status_code == 201
+    assert response.json()["name"] == name
+
+def negative_assert_symbol(name):
+    """Validates a 400 response for invalid name inputs."""
+    auth_token = get_new_user_token()
+    response = utilities.post_new_client_kit(set_card_name(name), auth_token)
+    assert response.status_code == 400
+```
+
+Each test calls one of these two functions — keeping test cases 
+focused on input data, not assertion logic.
+
+---
+
+## Key Technical Decisions
+
+**Boundary value focus**
+The test suite targets the 1/511/512 character boundaries — the 
+values most likely to expose missing validation logic. This mirrors 
+the boundary value analysis technique used in manual API testing.
+
+**Auth token per test**
+Each test generates a fresh auth token via `get_new_user_token()`, 
+ensuring test independence and preventing state pollution between runs.
+
+**Centralized endpoint configuration**
+All URLs and paths live in `configuration.py`. Environment changes 
+require no modifications to test logic.
+
+---
+
+## Setup
+
+**Prerequisites**
+- Python 3.14+
+- Git
+
+**Install dependencies**
+```bash
+pip install requests pytest
+```
+
+**Configure server URL**
+
+Open `configuration.py` and update:
+```python
+URL_SERVICE = "https://your-server-url"
+```
+
+**Run all tests**
+```bash
+pytest test.py -v
+```
+
+**Run a specific test**
+```bash
+pytest test.py::test_create_kit_1_letter_in_name_get_success_response -v
+```
+
+---
+
+## Tech Stack
+
+| Tool | Version |
+|---|---|
+| Python | 3.14+ |
+| requests | Latest |
+| pytest | Latest |
+| API | REST / JSON |
